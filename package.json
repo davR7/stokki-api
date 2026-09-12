@@ -7,7 +7,8 @@
     "build": "tsup",
     "dev": "tsx watch --env-file=.env src/main/index.ts",
     "start": "node dist/index.js",
-    "test": "vitest"
+    "test": "vitest",
+    "seed:categories": "tsx --env-file=.env src/infra/database/seed/category.seed.ts"
   },
   "keywords": [],
   "author": "Davidson Ratis",
