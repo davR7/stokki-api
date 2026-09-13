@@ -1,9 +1,5 @@
+import { ProductStatus } from "@/modules/product/product-status.enum";
 import { Schema } from "mongoose";
-
-enum ProductStatus {
-  ACTIVE = "active",
-  INACTIVE = "inactive",
-}
 
 export const productSchema = new Schema(
   {
