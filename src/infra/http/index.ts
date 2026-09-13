@@ -30,6 +30,10 @@ export class App {
     this.app.use(new CatchAllMiddleware().execute);
   }
 
+  getInstance() {
+    return this.app
+  }
+
   listen(port: number) {
     this.app.listen(port, () => {
       console.log(`HTTP Server running at ${port}`);
