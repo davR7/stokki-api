@@ -1,19 +1,17 @@
 import request from "supertest";
 import { App } from "@/infra/http";
 import { router } from "@/main/routes";
-import { ProductInputDto } from "@/modules/product/product.dto";
+import { ListProductOutputDto, ProductInputDto } from "@/modules/product/product.dto";
 import { ProductUseCase } from "@/modules/product/product.use-case";
+import { ProductStatus } from "@/modules/product/product-status.enum";
 import { ConflictError } from "@/shared/error/conflict.error";
 import { NotFoundError } from "@/shared/error/not-found.error";
-import { ProductStatus } from "@/modules/product/product-status.enum";
+import { makeProductData } from "./factories/product-data";
+
+const product = makeProductData();
 
 const productInput: ProductInputDto = {
-  name: "Teclado Mecânico HyperX Alloy Origins Core",
-  sku: "PER-HYP-ALLOY-001",
-  description:
-    "Teclado mecânico compacto com switches mecânicos, iluminação RGB e estrutura em alumínio.",
-  price: 399.98,
-  categoryId: "36cdb479-f8a4-480b-a52b-7c4c7c95c4db",
+  ...product,
   stock: {
     quantity: 120,
     minimumQuantity: 40,
@@ -71,5 +69,79 @@ describe("POST /products", () => {
     expect(statusCode).toBe(409);
 
     expect(body.message).toBe("Produto já cadastrado");
+  });
+});
+
+describe("GET /products", () => {
+  const app = new App(router).getInstance();
+
+  const createProductOuput = () => ({
+    ...makeProductData(),
+    id: crypto.randomUUID(),
+    status: ProductStatus.ACTIVE,
+    createdAt: new Date(),
+  });
+
+  const productList: ListProductOutputDto = {
+    products: Array.from({ length: 5 }, createProductOuput),
+    page: 1,
+    limit: 5,
+    total: 5,
+  };
+
+  test("deve retornar 200 e listar produtos", async () => {
+    vi.spyOn(ProductUseCase.prototype, "list").mockResolvedValueOnce(productList);
+
+    const { status, body } = await request(app).get("/products");
+
+    expect(status).toBe(200);
+
+    expect(body).toEqual({
+      ...productList,
+      products: productList.products.map((product) => ({
+        ...product,
+        createdAt: product.createdAt.toISOString(),
+      })),
+    });
+  });
+
+  test("deve passar os parâmetros de paginação para o caso de uso", async () => {
+    const productUseCaseMock = vi
+      .spyOn(ProductUseCase.prototype, "list")
+      .mockResolvedValueOnce(productList);
+
+    await request(app).get("/products").query({ page: 1, limit: 3 });
+
+    expect(productUseCaseMock).toHaveBeenCalledWith(expect.objectContaining({ page: 1, limit: 3 }));
+  });
+
+  test("deve passar o parâmetro search para o caso de uso", async () => {
+    const productUseCaseMock = vi
+      .spyOn(ProductUseCase.prototype, "list")
+      .mockResolvedValueOnce(productList);
+
+    await request(app).get("/products").query({ search: "teclado" });
+
+    expect(productUseCaseMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        search: "teclado",
+      }),
+    );
+  });
+
+  test("deve passar o parâmetro categoryId para o caso de uso", async () => {
+    const productUseCaseMock = vi
+      .spyOn(ProductUseCase.prototype, "list")
+      .mockResolvedValueOnce(productList);
+
+    await request(app)
+      .get("/products")
+      .query({ categoryId: "36cdb479-f8a4-480b-a52b-7c4c7c95c4db" });
+
+    expect(productUseCaseMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        categoryId: "36cdb479-f8a4-480b-a52b-7c4c7c95c4db",
+      }),
+    );
   });
 });
