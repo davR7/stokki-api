@@ -2,6 +2,8 @@ import { Product } from "@/modules/product/product.entity";
 import { ProductMapper } from "@/modules/product/product.mapper";
 import { ProductRepository } from "@/modules/product/product.repository";
 import { ProductModel } from "../database/models/product";
+import { Pagination } from "./ports/Pagination";
+import { ProductList } from "./ports/ProductList";
 
 export class ProductMongooseRepository implements ProductRepository {
   async create(input: Product): Promise<Product> {
@@ -13,5 +15,30 @@ export class ProductMongooseRepository implements ProductRepository {
     const product = await ProductModel.findOne({ sku });
     if (!product) return null;
     return ProductMapper.toDomain(product);
+  }
+
+  async findAll({ page, limit, search, categoryId }: Pagination): Promise<ProductList> {
+    const filter = {
+      ...(categoryId && { categoryId }),
+      ...(search && {
+        $or: [
+          { name: { $regex: search, $options: "i" } },
+          { sku: { $regex: search, $options: "i" } },
+        ],
+      }),
+    };
+
+    const products = await ProductModel.find(filter)
+      .limit(limit)
+      .skip((page - 1) * limit);
+
+    const total = await ProductModel.countDocuments();
+
+    return {
+      products: products.map((product) => ProductMapper.toDomain(product)),
+      page,
+      limit,
+      total,
+    };
   }
 }

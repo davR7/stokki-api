@@ -5,12 +5,12 @@ type ProductProps = {
   sku: string;
   description: string;
   price: number;
-  status: ProductStatus;
   categoryId: string;
 };
 
 type PersistedProductProps = ProductProps & {
   id: string;
+  status: ProductStatus;
   createdAt: Date;
   updatedAt?: Date;
 };
