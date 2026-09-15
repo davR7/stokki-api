@@ -1,3 +1,4 @@
+import { Pagination } from "@/infra/repositories/ports/Pagination";
 import { ProductStatus } from "./product-status.enum";
 
 export interface ProductInputDto {
@@ -16,4 +17,13 @@ export interface ProductOutputDto extends Omit<ProductInputDto, "stock"> {
   id: string;
   status: ProductStatus;
   createdAt: Date;
+}
+
+export type ListProductInputDto = Pagination;
+
+export interface ListProductOutputDto {
+  products: ProductOutputDto[];
+  page: number;
+  limit: number;
+  total: number;
 }
