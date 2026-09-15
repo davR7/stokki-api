@@ -3,7 +3,12 @@ import { NotFoundError } from "@/shared/error/not-found.error";
 import { CategoryRepository } from "../category/category.repository";
 import { Stock } from "../stock/stock.entity";
 import { StockRepository } from "../stock/stock.repository";
-import { ProductInputDto, ProductOutputDto } from "./product.dto";
+import {
+  ListProductInputDto,
+  ListProductOutputDto,
+  ProductInputDto,
+  ProductOutputDto,
+} from "./product.dto";
 import { Product } from "./product.entity";
 import { ProductMapper } from "./product.mapper";
 import { ProductRepository } from "./product.repository";
@@ -41,5 +46,16 @@ export class ProductUseCase {
     );
 
     return ProductMapper.toUseCase(output);
+  }
+
+  async list(input: ListProductInputDto): Promise<ListProductOutputDto> {
+    const output = await this.productRepository.findAll(input);
+
+    return {
+      products: output.products.map((p) => ProductMapper.toUseCase(p)),
+      page: output.page,
+      limit: output.limit,
+      total: output.total,
+    };
   }
 }
