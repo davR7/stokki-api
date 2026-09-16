@@ -4,9 +4,12 @@ import { router } from "@/main/routes";
 import { ListProductOutputDto, ProductInputDto } from "@/modules/product/product.dto";
 import { ProductUseCase } from "@/modules/product/product.use-case";
 import { ProductStatus } from "@/modules/product/product-status.enum";
+import { StockUseCase } from "@/modules/stock/stock.use-case";
 import { ConflictError } from "@/shared/error/conflict.error";
 import { NotFoundError } from "@/shared/error/not-found.error";
 import { makeProductData } from "./factories/product-data";
+
+const app = new App(router).getInstance();
 
 const product = makeProductData();
 
@@ -27,9 +30,15 @@ const productOutput = {
   createdAt: new Date(),
 };
 
-describe("POST /products", () => {
-  const app = new App(router).getInstance();
+const stockInput = stock;
 
+const stockOutput = {
+  ...stock,
+  id: crypto.randomUUID(),
+  productId: crypto.randomUUID(),
+};
+
+describe("POST /products", () => {
   test("deve retornar 201 e o produto", async () => {
     const productUseCaseMock = vi
       .spyOn(ProductUseCase.prototype, "create")
@@ -73,8 +82,6 @@ describe("POST /products", () => {
 });
 
 describe("GET /products", () => {
-  const app = new App(router).getInstance();
-
   const createProductOuput = () => ({
     ...makeProductData(),
     id: crypto.randomUUID(),
@@ -143,5 +150,36 @@ describe("GET /products", () => {
         categoryId: "36cdb479-f8a4-480b-a52b-7c4c7c95c4db",
       }),
     );
+  });
+});
+
+describe("PATCH /products/productId/stock", () => {
+  test("deve atualizar a quantidade e o valor minimo do estoque do produto", async () => {
+    const stockUseCaseMock = vi
+      .spyOn(StockUseCase.prototype, "update")
+      .mockResolvedValueOnce(stockOutput);
+
+    const { body } = await request(app)
+      .patch(`/products/${stockOutput.productId}/stock`)
+      .send(stockInput);
+
+    expect(stockUseCaseMock).toHaveBeenCalledWith(stockOutput.productId, {
+      quantity: stockInput.quantity,
+      minimumQuantity: stockInput.minimumQuantity,
+    });
+
+    expect(body).toEqual(stockOutput);
+  });
+
+  test("deve retornar 404 quando o estoque não existir", async () => {
+    vi.spyOn(StockUseCase.prototype, "update").mockRejectedValueOnce(
+      new NotFoundError("Estoque do produto não encontrado", "STOCK_ERR_NOT_FOUND"),
+    );
+
+    const { statusCode } = await request(app)
+      .patch(`/products/${stockOutput.productId}/stock`)
+      .send(stockInput);
+
+    expect(statusCode).toBe(404);
   });
 });

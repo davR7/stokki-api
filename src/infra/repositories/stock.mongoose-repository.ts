@@ -14,4 +14,14 @@ export class StockMongooseRepository implements StockRepository {
 
     return StockMapper.toDomain(stock);
   }
+
+  async update(productId: string, input: Partial<Stock>): Promise<Stock | null> {
+    const stock = await StockModel.findOneAndUpdate({ productId }, input, {
+      returnDocument: "after",
+    });
+
+    if (!stock) return null;
+
+    return StockMapper.toDomain(stock);
+  }
 }

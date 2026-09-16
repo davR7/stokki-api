@@ -1,5 +1,6 @@
 import { Stock } from "./stock.entity";
 
 export interface StockRepository {
-  create(stock: Stock): Promise<Stock>;
+  create(input: Stock): Promise<Stock>;
+  update(productId: string, input: Partial<Stock>): Promise<Stock | null>;
 }
