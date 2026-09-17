@@ -22,4 +22,10 @@ export class ProductController {
 
     return res.json(output);
   }
+
+  async handleListLowStock(_req: Request, res: Response) {
+    const output = await this.productUseCase.listLowStock();
+
+    return res.json(output);
+  }
 }
