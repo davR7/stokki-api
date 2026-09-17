@@ -8,6 +8,7 @@ import {
   ListProductOutputDto,
   ProductInputDto,
   ProductOutputDto,
+  ProductWithStockOutputDto,
 } from "./product.dto";
 import { Product } from "./product.entity";
 import { ProductMapper } from "./product.mapper";
@@ -57,5 +58,11 @@ export class ProductUseCase {
       limit: output.limit,
       total: output.total,
     };
+  }
+
+  async listLowStock(): Promise<ProductWithStockOutputDto[]> {
+    const output = await this.productRepository.findLowStock();
+
+    return output.map((product) => ProductMapper.toUseCaseProductWithStock(product));
   }
 }
