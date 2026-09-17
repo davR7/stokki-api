@@ -8,6 +8,7 @@ import { StockUseCase } from "@/modules/stock/stock.use-case";
 import { ConflictError } from "@/shared/error/conflict.error";
 import { NotFoundError } from "@/shared/error/not-found.error";
 import { makeProductData } from "./factories/product-data";
+import { makeProductWithStockData } from "./factories/product-with-stock-data";
 
 const app = new App(router).getInstance();
 
@@ -47,12 +48,10 @@ describe("POST /products", () => {
     const { statusCode, body } = await request(app).post("/products").send(productInput);
 
     expect(statusCode).toBe(201);
-
     expect(body).toEqual({
       ...productOutput,
       createdAt: productOutput.createdAt.toISOString(),
     });
-
     expect(productUseCaseMock).toHaveBeenCalledWith(productInput);
   });
 
@@ -64,7 +63,6 @@ describe("POST /products", () => {
     const { statusCode, body } = await request(app).post("/products").send(productInput);
 
     expect(statusCode).toBe(404);
-
     expect(body.message).toBe("Categoria não encontrada");
   });
 
@@ -76,7 +74,6 @@ describe("POST /products", () => {
     const { statusCode, body } = await request(app).post("/products").send(productInput);
 
     expect(statusCode).toBe(409);
-
     expect(body.message).toBe("Produto já cadastrado");
   });
 });
@@ -102,7 +99,6 @@ describe("GET /products", () => {
     const { status, body } = await request(app).get("/products");
 
     expect(status).toBe(200);
-
     expect(body).toEqual({
       ...productList,
       products: productList.products.map((product) => ({
@@ -153,6 +149,22 @@ describe("GET /products", () => {
   });
 });
 
+describe("GET /products/low-stock", () => {
+  const stockProductData = Array.from({ length: 3 }, makeProductWithStockData);
+
+  test("deve listar produtos com estoque", async () => {
+    const productUseCaseMock = vi
+      .spyOn(ProductUseCase.prototype, "listLowStock")
+      .mockResolvedValueOnce(stockProductData);
+
+    const { statusCode, body } = await request(app).get("/products/low-stock");
+
+    expect(body).toEqual(stockProductData);
+    expect(statusCode).toEqual(200);
+    expect(productUseCaseMock).toHaveBeenCalled();
+  });
+});
+
 describe("PATCH /products/productId/stock", () => {
   test("deve atualizar a quantidade e o valor minimo do estoque do produto", async () => {
     const stockUseCaseMock = vi
@@ -167,7 +179,6 @@ describe("PATCH /products/productId/stock", () => {
       quantity: stockInput.quantity,
       minimumQuantity: stockInput.minimumQuantity,
     });
-
     expect(body).toEqual(stockOutput);
   });
 

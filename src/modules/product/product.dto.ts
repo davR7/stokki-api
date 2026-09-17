@@ -1,4 +1,5 @@
 import { Pagination } from "@/infra/repositories/ports/Pagination";
+import { StockOutputDto } from "../stock/stock.dto";
 import { ProductStatus } from "./product-status.enum";
 
 export interface ProductInputDto {
@@ -26,4 +27,18 @@ export interface ListProductOutputDto {
   page: number;
   limit: number;
   total: number;
+}
+
+export interface ProductWithStockOutputDto {
+  product: {
+    id: string;
+    name: string;
+    sku: string;
+    status: ProductStatus;
+  };
+  stock: {
+    id: string;
+    quantity: number;
+    minimumQuantity: number;
+  };
 }

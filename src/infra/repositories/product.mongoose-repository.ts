@@ -4,6 +4,7 @@ import { ProductRepository } from "@/modules/product/product.repository";
 import { ProductModel } from "../database/models/product";
 import { Pagination } from "./ports/Pagination";
 import { ProductList } from "./ports/ProductList";
+import { ProductWithStock } from "./ports/ProductWithStock";
 
 export class ProductMongooseRepository implements ProductRepository {
   async create(input: Product): Promise<Product> {
@@ -40,5 +41,30 @@ export class ProductMongooseRepository implements ProductRepository {
       limit,
       total,
     };
+  }
+
+  async findLowStock(): Promise<ProductWithStock[]> {
+    const products = await ProductModel.aggregate([
+      {
+        $lookup: {
+          from: "stocks",
+          localField: "_id",
+          foreignField: "productId",
+          as: "stock",
+        },
+      },
+      {
+        $unwind: "$stock",
+      },
+      {
+        $match: {
+          $expr: {
+            $lte: ["$stock.quantity", "$stock.minimumQuantity"],
+          },
+        },
+      },
+    ]);
+
+    return products.map((product) => ProductMapper.toDomainProductWithStock(product));
   }
 }

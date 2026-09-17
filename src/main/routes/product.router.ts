@@ -11,6 +11,10 @@ export default (router: Router) => {
     return makeProductFactory().handleList(req, res);
   });
 
+  router.get("/products/low-stock", (req, res) => {
+    return makeProductFactory().handleListLowStock(req, res);
+  });
+
   router.patch("/products/:productId/stock", (req, res) => {
     return makeStockFactory().handleUpdate(req, res);
   });
